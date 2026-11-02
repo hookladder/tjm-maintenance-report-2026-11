@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Toujours Mikes × Hook + Ladder — Web Maintenance Report · November 2026</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Web maintenance report for toujoursmikes.ca: performance, security, Hummingbird findings and redirects.">
+  <link rel="icon" href="assets/mikes-logo.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/themes/vue.css">
+  <style>
+    :root {
+      --hl-red: #DC2227;
+      --hl-orange: #DC6727;
+      --hl-black: #0B0B0B;
+      --hl-ink: #1A1A1A;
+      --hl-grey: #F6F6F6;
+      --hl-line: #E4E4E4;
+      --hl-muted: #5C5C5C;
+      --hl-green: #1E8E3E;
+      --hl-amber: #B86A00;
+      --header-h: 68px;
+      --sidebar-w: 280px;
+      --theme-color: var(--hl-red);
+      --base-font-family: 'Montserrat', system-ui, sans-serif;
+      --heading-font-family: 'PT Sans Narrow', 'Arial Narrow', sans-serif;
+    }
+    html, body { background: #fff; }
+    body { font-family: var(--base-font-family); color: var(--hl-ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    /* ---------- Fixed report header ---------- */
+    .report-header {
+      position: fixed; inset: 0 0 auto 0; height: var(--header-h); z-index: 40;
+      display: flex; align-items: center; gap: 18px; padding: 0 24px;
+      background: #fff; border-bottom: 1px solid var(--hl-line);
+    }
+    .report-header::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--hl-red), var(--hl-orange)); }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
+    .brand img { height: 40px; width: auto; display: block; }
+    .brand .x { font-family: var(--heading-font-family); color: var(--hl-muted); font-size: 1.2rem; }
+    .hl-mark { font-family: var(--heading-font-family); font-weight: 700; color: var(--hl-red); font-size: 1.12rem; line-height: .88; letter-spacing: .4px; }
+    .hl-mark small { display: block; font-size: .56rem; color: var(--hl-black); letter-spacing: 1px; margin-top: 3px; }
+    .report-title { border-left: 1px solid var(--hl-line); padding-left: 18px; min-width: 0; }
+    .report-title strong { display: block; font-family: var(--heading-font-family); font-size: 1.32rem; color: var(--hl-black); line-height: 1.05; white-space: nowrap; }
+    .report-title span { display: block; font-size: .74rem; color: var(--hl-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .report-meta { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+    .report-meta span { font-family: var(--heading-font-family); text-transform: uppercase; letter-spacing: .6px; font-size: .86rem; padding: 4px 10px; border: 1px solid var(--hl-black); color: var(--hl-black); }
+    .report-meta span.solid { background: var(--hl-black); color: #fff; }
+
+    /* ---------- Layout offsets for the fixed header ---------- */
+    .sidebar { top: var(--header-h); height: calc(100% - var(--header-h)); width: var(--sidebar-w); background: var(--hl-black); border-right: 0; padding-top: 10px; }
+    .content { top: var(--header-h); left: var(--sidebar-w); }
+    body.close .content { left: 0; }
+    .sidebar > h1 { display: none; }
+    .sidebar-toggle { top: auto; bottom: 0; width: 46px; height: 46px; padding: 14px; background: var(--hl-black); }
+    .sidebar-toggle span { background-color: #fff; }
+    body.close .sidebar-toggle { width: 46px; background: var(--hl-red); }
+    .search { border-bottom: 1px solid #222; padding: 6px 12px 12px; margin-bottom: 4px; }
+    .search .input-wrap { background: transparent; }
+    .search input { background: #151515; color: #fff; border: 1px solid #2A2A2A; border-radius: 0; font-family: var(--base-font-family); }
+    .search .results-panel { background: #111; }
+    .search .matching-post { border-bottom: 1px solid #222; }
+    .search a, .search p { color: #ddd; }
+
+    /* Sidebar navigation */
+    .sidebar-nav { padding: 4px 0 60px; }
+    .sidebar ul li a { color: #CFCFCF; font-size: 14px; padding: 7px 22px; display: block; border-left: 3px solid transparent; white-space: normal; }
+    .sidebar ul li a:hover { color: #fff; text-decoration: none; }
+    .sidebar ul li.active > a { color: #fff; font-weight: 600; border-left-color: var(--hl-red); background: rgba(255,255,255,.05); }
+    .sidebar-nav > ul > li > p, .sidebar-nav strong { color: var(--hl-red); font-family: var(--heading-font-family); text-transform: uppercase; letter-spacing: .6px; padding: 14px 22px 4px; margin: 0; font-size: 15px; display: block; }
+    .sidebar-nav ul ul { padding-left: 10px; }
+    .sidebar-nav ul ul a { font-size: 13px; color: #9C9C9C; }
+    .sidebar ul li ul.app-sub-sidebar { padding-left: 14px; }
+    .sidebar ul.app-sub-sidebar li:before { display: none; }
+
+    /* ---------- Document typography ---------- */
+    .markdown-section { max-width: 980px; padding: 40px 40px 80px; font-size: 15.5px; line-height: 1.7; }
+    .markdown-section h1, .markdown-section h2, .markdown-section h3, .markdown-section h4 { font-family: var(--heading-font-family); color: var(--hl-black); font-weight: 700; letter-spacing: .2px; }
+    .markdown-section :is(h1, h2, h3, h4) a.anchor, .markdown-section :is(h1, h2, h3, h4) a.anchor span { color: inherit; border-bottom: 0; font-weight: inherit; }
+    .markdown-section :is(h1, h2, h3, h4) { scroll-margin-top: calc(var(--header-h) + 16px); }
+    .markdown-section h1 { font-size: 3rem; line-height: 1.02; margin: 0 0 .8rem; }
+    .markdown-section h2 { font-size: 2rem; margin-top: 3rem; padding-bottom: .35rem; border-bottom: 3px solid var(--hl-black); }
+    .markdown-section h3 { font-size: 1.5rem; margin-top: 2.2rem; }
+    .markdown-section h4 { font-size: 1.15rem; text-transform: uppercase; color: var(--hl-red); }
+    .markdown-section a { color: var(--hl-red); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(220,34,39,.3); }
+    .markdown-section a:hover { border-bottom-color: var(--hl-red); }
+    .markdown-section strong { color: var(--hl-black); }
+    .markdown-section code { background: var(--hl-grey); color: var(--hl-red); border-radius: 3px; padding: 2px 6px; font-size: .86em; word-break: break-word; }
+    .markdown-section pre { background: var(--hl-black); border-radius: 0; border-left: 4px solid var(--hl-red); }
+    .markdown-section pre > code { background: transparent; color: #F2F2F2; word-break: normal; }
+    .markdown-section table { display: table; width: 100%; border-collapse: collapse; font-size: .92em; margin: 1.2rem 0 1.6rem; }
+    .markdown-section th { background: var(--hl-black); color: #fff; font-family: var(--heading-font-family); font-size: 1.05em; letter-spacing: .3px; text-align: left; border: 0; padding: 10px 12px; }
+    .markdown-section td { border: 0; border-bottom: 1px solid var(--hl-line); padding: 10px 12px; vertical-align: top; }
+    .markdown-section tr:nth-child(2n) { background: #FBFBFB; }
+    .markdown-section blockquote { border-left: 4px solid var(--hl-red); background: var(--hl-grey); color: var(--hl-ink); padding: 14px 20px; margin: 1.4rem 0; }
+    .markdown-section blockquote p { margin: 0; }
+    .markdown-section p.tip { border-left: 4px solid var(--hl-red); background: var(--hl-grey); border-radius: 0; }
+    .markdown-section p.tip:before { background-color: var(--hl-red); }
+    .markdown-section p.warn { background: #FFF4EE; border-left: 4px solid var(--hl-orange); border-radius: 0; }
+    .markdown-section img { max-width: 100%; height: auto; }
+
+    .eyebrow { font-family: var(--heading-font-family); color: var(--hl-red); text-transform: uppercase; font-weight: 700; letter-spacing: .6px; font-size: 1.1rem; margin: 0 0 .2rem; }
+    .band { background: var(--hl-black); color: #fff; padding: 22px 26px; margin: 0 0 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px 28px; }
+    .band b { display: block; font-family: var(--heading-font-family); color: var(--hl-red); text-transform: uppercase; letter-spacing: .6px; font-size: .95rem; }
+    .band span { font-size: .92rem; line-height: 1.45; display: block; }
+
+    /* Score cards */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 1.2rem 0 1.8rem; }
+    .card { border: 1px solid var(--hl-line); border-top: 4px solid var(--hl-black); padding: 16px; background: #fff; }
+    .card.good { border-top-color: var(--hl-green); }
+    .card.warn { border-top-color: var(--hl-orange); }
+    .card.bad  { border-top-color: var(--hl-red); }
+    .card h5 { margin: 0 0 6px; font-family: var(--heading-font-family); font-size: 1.02rem; text-transform: uppercase; letter-spacing: .5px; color: var(--hl-muted); }
+    .card .big { font-family: var(--heading-font-family); font-size: 2.6rem; font-weight: 700; line-height: 1; color: var(--hl-black); }
+    .card .big small { font-size: 1.05rem; color: var(--hl-muted); font-weight: 400; }
+    .card .delta { display: inline-block; margin-top: 8px; font-size: .8rem; font-weight: 700; padding: 2px 8px; background: var(--hl-grey); }
+    .card .delta.up { color: var(--hl-green); }
+    .card .delta.down { color: var(--hl-red); }
+    .card p { margin: .5rem 0 0; font-size: .84rem; color: var(--hl-muted); line-height: 1.5; }
+
+    .pill { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; padding: 2px 8px; white-space: nowrap; }
+    .pill.ok { background: #E6F4EA; color: var(--hl-green); }
+    .pill.med { background: #FFF1E6; color: var(--hl-amber); }
+    .pill.flag { background: #FDE8E8; color: var(--hl-red); }
+    .pill.info { background: var(--hl-grey); color: var(--hl-ink); }
+
+    /* Screenshots */
+    .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin: 1.2rem 0 2rem; }
+    figure.shot { margin: 0; border: 1px solid var(--hl-line); background: #fff; }
+    figure.shot a { border: 0; display: block; }
+    figure.shot img { display: block; width: 100%; height: auto; }
+    figure.shot figcaption { font-size: .8rem; color: var(--hl-muted); padding: 10px 12px; border-top: 1px solid var(--hl-line); line-height: 1.45; }
+    figure.shot figcaption b { color: var(--hl-black); font-family: var(--heading-font-family); font-size: .95rem; text-transform: uppercase; letter-spacing: .4px; margin-right: 6px; }
+    figure.shot.narrow { max-width: 320px; }
+    .shots.single { grid-template-columns: 1fr; }
+
+    .footer-note { margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid var(--hl-line); font-size: .82rem; color: var(--hl-muted); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1100px) {
+      .report-meta span:not(.solid) { display: none; }
+    }
+    @media (max-width: 768px) {
+      :root { --header-h: 58px; }
+      .report-header { padding: 0 14px; gap: 10px; }
+      .brand img { height: 32px; }
+      .hl-mark { font-size: .95rem; }
+      .report-title { padding-left: 10px; }
+      .report-title strong { font-size: 1.05rem; }
+      .report-title span, .report-meta { display: none; }
+      /* Let the docsify theme drive the off-canvas sidebar; only align it with the header. */
+      .sidebar { width: 300px; }
+      .content { left: 0; padding-top: var(--header-h); }
+      .sidebar-toggle { width: 48px; height: 48px; padding: 14px; }
+      body.close .sidebar-toggle { width: 300px; background: var(--hl-black); }
+      .markdown-section { padding: 26px 16px 72px; font-size: 15px; }
+      .markdown-section h1 { font-size: 2.3rem; }
+      .markdown-section h2 { font-size: 1.7rem; }
+      .markdown-section table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: normal; }
+      .markdown-section th, .markdown-section td { min-width: 110px; padding: 9px 10px; }
+      .markdown-section th:first-child, .markdown-section td:first-child { min-width: 64px; }
+      .markdown-section pre { font-size: 12px; }
+      .band { padding: 18px; grid-template-columns: 1fr 1fr; }
+      .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .card { padding: 12px; }
+      .card .big { font-size: 2rem; }
+      .shots { grid-template-columns: 1fr; }
+      figure.shot.narrow { max-width: 240px; margin: 0 auto; }
+    }
+    @media (max-width: 420px) {
+      .report-title { display: none; }
+      .cards, .band { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="report-header">
+    <a class="brand" href="#/" aria-label="Report home">
+      <img src="assets/mikes-logo.webp" alt="Toujours Mikes">
+      <span class="x">×</span>
+      <span class="hl-mark">HOOK+<br>LADDER<small>WEB TEAM</small></span>
+    </a>
+    <div class="report-title">
+      <strong>Web Maintenance Report</strong>
+      <span>toujoursmikes.ca · performance, security & SEO</span>
+    </div>
+  </header>
+  <div id="app">Loading report…</div>
+  <script>
+    window.$docsify = {
+      name: 'Web Maintenance Report',
+      nameLink: '#/',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      maxLevel: 3,
+      auto2top: true,
+      themeColor: '#DC2227',
+      relativePath: false,
+      search: { placeholder: 'Search the report', noData: 'No results', depth: 3 },
+      notFoundPage: true,
+      plugins: [function (hook) {
+        // On phones, close the off-canvas sidebar after each navigation.
+        hook.doneEach(function () {
+          if (window.innerWidth <= 768) document.body.classList.remove('close');
+        });
+      }]
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/plugins/search.min.js"></script>
+</body>
+</html>
